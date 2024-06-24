@@ -55,7 +55,7 @@ class ProductServiceApplicationTests {
 				.andExpect(status().isCreated());
 		Assertions.assertEquals(1, productRepository.findAll().size());
 	}
-	
+
 	private ProductRequest getProductRequest() {
 		return ProductRequest.builder()
 				.name("Samsung Galaxy")
