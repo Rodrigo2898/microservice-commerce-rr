@@ -6,11 +6,13 @@ import com.msrr.order_service.model.Order;
 import com.msrr.order_service.model.OrderLineItems;
 import com.msrr.order_service.repository.OrderRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class OrderService {
     private final OrderRepository orderRepository;
 
