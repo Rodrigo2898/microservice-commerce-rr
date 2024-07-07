@@ -6,9 +6,12 @@ import com.msrr.order_service.dto.OrderRequest;
 import com.msrr.order_service.model.Order;
 import com.msrr.order_service.model.OrderLineItems;
 import com.msrr.order_service.repository.OrderRepository;
+import io.netty.resolver.DefaultAddressResolverGroup;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,14 +21,16 @@ import java.util.UUID;
 @Transactional
 public class OrderService {
     private final OrderRepository orderRepository;
-    private final WebClient webClient;
+    private final WebClient.Builder webClientBuilder;
 
-    public OrderService(OrderRepository orderRepository, WebClient webClient) {
+    public OrderService(OrderRepository orderRepository, WebClient.Builder webClientBuilder) {
         this.orderRepository = orderRepository;
-        this.webClient = webClient;
+        this.webClientBuilder = webClientBuilder;
     }
 
     public void placeOrder(OrderRequest orderRequest) {
+        var httpClient = HttpClient.create().resolver(DefaultAddressResolverGroup.INSTANCE);
+
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
 
@@ -42,8 +47,9 @@ public class OrderService {
 
         // Call Inventory Service, and place order if product is in stock
         // Synchronous request
-        InventoryResponse[] inventoryResponsesArray = webClient.get()
-                .uri("http://localhost:8082/api/inventory",
+        InventoryResponse[] inventoryResponsesArray = webClientBuilder.clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build().get()
+                .uri("http://inventory-service/api/inventory",
                         uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
                 .retrieve()
                 .bodyToMono(InventoryResponse[].class)
