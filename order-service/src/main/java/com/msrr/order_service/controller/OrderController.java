@@ -23,17 +23,16 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @CircuitBreaker(name = "inventory")
+    @CircuitBreaker(name = "inventory", fallbackMethod = "fallbackMethod")
     @TimeLimiter(name = "inventory")
     @Retry(name = "inventory")
-    public String placeOrder(@RequestBody OrderRequest orderRequest) {
-        orderService.placeOrder(orderRequest);
-        return "Order Placed Successfully";
+    public CompletableFuture<String> placeOrder(@RequestBody OrderRequest orderRequest) {
+        return CompletableFuture.supplyAsync(() -> orderService.placeOrder(orderRequest));
     }
 
     public CompletableFuture<String> fallbackMethod(OrderRequest orderRequest,
                                                     RuntimeException runtimeException) {
         log.info("Cannot Place Order Executing Fallback logic");
-        return CompletableFuture.supplyAsync(() -> "Oops! Something went wrong, please order after some time!");
+        return CompletableFuture.supplyAsync(() -> "Oops! Something went wrong, please order after some time");
     }
 }

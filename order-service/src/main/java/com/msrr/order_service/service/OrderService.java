@@ -28,7 +28,7 @@ public class OrderService {
         this.webClientBuilder = webClientBuilder;
     }
 
-    public void placeOrder(OrderRequest orderRequest) {
+    public String placeOrder(OrderRequest orderRequest) {
         var httpClient = HttpClient.create().resolver(DefaultAddressResolverGroup.INSTANCE);
 
         Order order = new Order();
@@ -60,6 +60,7 @@ public class OrderService {
 
         if (allProductsInStock) {
             orderRepository.save(order);
+            return "Order Placed Successfully";
 
         } else {
             throw new IllegalArgumentException("Product is not in stock, please try again later");
