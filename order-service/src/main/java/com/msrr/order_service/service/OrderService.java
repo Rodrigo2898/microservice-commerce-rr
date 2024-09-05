@@ -3,11 +3,14 @@ package com.msrr.order_service.service;
 import com.msrr.order_service.dto.InventoryResponse;
 import com.msrr.order_service.dto.OrderLineItemsDto;
 import com.msrr.order_service.dto.OrderRequest;
+import com.msrr.order_service.event.OrderPlaceEvent;
 import com.msrr.order_service.model.Order;
 import com.msrr.order_service.model.OrderLineItems;
 import com.msrr.order_service.repository.OrderRepository;
 import io.netty.resolver.DefaultAddressResolverGroup;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -22,10 +25,15 @@ import java.util.UUID;
 public class OrderService {
     private final OrderRepository orderRepository;
     private final WebClient.Builder webClientBuilder;
+    private final KafkaTemplate<String, OrderPlaceEvent> kafkaTemplate;
+    @Value("${spring.kafka.template.default-topic}")
+    private String defaultTopic;
 
-    public OrderService(OrderRepository orderRepository, WebClient.Builder webClientBuilder) {
+    public OrderService(OrderRepository orderRepository, WebClient.Builder webClientBuilder,
+                        KafkaTemplate<String, OrderPlaceEvent> kafkaTemplate) {
         this.orderRepository = orderRepository;
         this.webClientBuilder = webClientBuilder;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     public String placeOrder(OrderRequest orderRequest) {
@@ -60,8 +68,8 @@ public class OrderService {
 
         if (allProductsInStock) {
             orderRepository.save(order);
+            kafkaTemplate.send("notificationTopic", new OrderPlaceEvent(order.getOrderNumber()));
             return "Order Placed Successfully";
-
         } else {
             throw new IllegalArgumentException("Product is not in stock, please try again later");
         }
