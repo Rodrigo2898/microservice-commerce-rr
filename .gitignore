@@ -32,4 +32,10 @@ build/
 ### VS Code ###
 .vscode/
 
+/.env
+mongo-data
+mysql_keycloak_data
+postgres-inventory
+postgres-order
+
 
