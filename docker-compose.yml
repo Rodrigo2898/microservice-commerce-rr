@@ -1,4 +1,4 @@
-version: '4'
+version: '3'
 services:
   postgres-order:
     container_name: postgres-order
@@ -13,9 +13,9 @@ services:
     expose:
       - "5431"
     ports:
-      - "5431:5431"
+        - "5431:5431"
     command: -p 5431
-    restart: unless-stopped
+    restart: always
 
   postgres-inventory:
     container_name: postgres-inventory
@@ -29,7 +29,7 @@ services:
       - ./postgres-inventory:/data/postgres
     ports:
       - "5432:5432"
-    restart: unless-stopped
+    restart: always
 
   mongo:
     container_name: mongo
@@ -208,3 +208,31 @@ services:
       - discovery-server
       - api-gateway
 
+  ## Prometheus
+  prometheus:
+    image: prom/prometheus:v2.37.1
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - product-service
+      - inventory-service
+      - order-service
+      - notification-service
+
+  grafana:
+    image: grafana/grafana-oss:8.5.2
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    links:
+      - prometheus:prometheus
+    volumes:
+      - ./grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
